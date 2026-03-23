@@ -4,11 +4,14 @@ import Editor from 'react-simple-code-editor';
 import { highlight, languages } from 'prismjs';
 import 'prismjs/components/prism-python';
 import 'prismjs/themes/prism-tomorrow.css';
-import { Send, Terminal, Code2, Bot, User, Loader2, Play, Sparkles, RefreshCw, Award, Eraser } from 'lucide-react';
+import { Send, Code2, Bot, User, Loader2, Sparkles, Eraser } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import Markdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 
 // Utility for tailwind classes
 function cn(...inputs: ClassValue[]) {
@@ -49,7 +52,7 @@ After 3 coding tasks, provide a Seniority Assessment:
 
 Response Protocol:
 - ONLY conversation goes to the chat (left pane).
-- ALL code must be sent to the editor (right pane) using the 'set_editor_content' tool.
+- ALL code must be displayed in the right implementation workspace. Use the 'set_editor_content' tool to update this workspace.
 - DO NOT include large code blocks in your chat response. Use the chat to explain, critique, and guide.
 - Use Markdown for text formatting in chat.
 - Use LaTeX for math: $O(N^2 d)$ for complexity or $\text{Softmax}(Q K^T / \sqrt{d_k})$.
@@ -63,19 +66,20 @@ Editable Zones: Clearly mark the implementation areas with:
 pass # Your code here
 # >>> END YOUR IMPLEMENTATION <<<
 
-Instructions: Explicitly tell the candidate to fill in the missing logic in the editor to the right.
+Instructions: Explicitly tell the candidate to fill in the missing logic in the implementation workspace to the right.
 Never provide the solution immediately. Give hints if the candidate is stuck, then ask them to try again.
 
 Context:
-The user has a code editor to the right. When the user sends a message, the current code in their editor is provided to you as context. Use it to evaluate their progress.`;
+The user has an implementation workspace to the right. When the user sends a message, the current code in their implementation workspace is provided to you as context. Use it to evaluate their progress.`;
 
 export default function App() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([{
+    role: 'bot',
+    content: "Welcome to the ML coding interview. I've set up a Multi-Layer Perceptron (MLP) training template in the implementation workspace. Please implement the full training step (zero gradients, forward pass, loss computation, backward pass, and optimizer step).\n\nWould you like to pursue this MLP task, or would you prefer to switch to a different topic?"
+  }]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [code, setCode] = useState<string>('# Your ML code will appear here\nimport torch\nimport torch.nn as nn\n\n');
-  const [executionResult, setExecutionResult] = useState<string | null>(null);
-  const [isExecuting, setIsExecuting] = useState(false);
+  const [code, setCode] = useState<string>('import torch\nimport torch.nn as nn\nimport torch.optim as optim\n\n# Define a simple MLP\nclass MLP(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.layers = nn.Sequential(\n            nn.Linear(10, 32),\n            nn.ReLU(),\n            nn.Linear(32, 1)\n        )\n\n    def forward(self, x):\n        return self.layers(x)\n\nmodel = MLP()\noptimizer = optim.SGD(model.parameters(), lr=0.01)\ncriterion = nn.MSELoss()\n\n# Dummy data\nx = torch.randn(1, 10)\ntarget = torch.randn(1, 1)\n\n# >>> START YOUR IMPLEMENTATION <<<\n# Perform a full training step\n# 1. Zero the gradients\n# 2. Forward pass\n# 3. Compute loss\n# 4. Backward pass\n# 5. Optimizer step\npass\n# >>> END YOUR IMPLEMENTATION <<<');
   const scrollRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<Chat | null>(null);
 
@@ -87,7 +91,6 @@ export default function App() {
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         tools: [
-          { codeExecution: {} },
           {
             functionDeclarations: [
               {
@@ -108,7 +111,8 @@ export default function App() {
           }
         ],
         toolConfig: {
-          includeServerSideToolInvocations: true
+          includeServerSideToolInvocations: true,
+          include_server_side_tool_invocations: true
         } as any
       },
     });
@@ -147,14 +151,6 @@ export default function App() {
         }
       }
 
-      // Handle executable code from codeExecution tool
-      if (response.executableCode) {
-        setCode(response.executableCode);
-      }
-      if (response.codeExecutionResult) {
-        setExecutionResult(response.codeExecutionResult);
-      }
-
       const botMessage: Message = {
         role: 'bot',
         content: response.text || (functionCalls ? "I've updated the editor with the task." : "I've processed your request."),
@@ -173,34 +169,6 @@ export default function App() {
     }
   };
 
-  const handleRunCode = async () => {
-    if (isExecuting || !chatRef.current) return;
-    setIsExecuting(true);
-    setExecutionResult(null);
-
-    try {
-      const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Please execute the following code and provide the result:\n\n\`\`\`python\n${code}\n\`\`\``,
-        config: {
-          tools: [{ codeExecution: {} }],
-        },
-      });
-
-      if (response.codeExecutionResult) {
-        setExecutionResult(response.codeExecutionResult);
-      } else {
-        setExecutionResult("Execution finished with no output.");
-      }
-    } catch (error) {
-      console.error("Execution Error:", error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      setExecutionResult(`Error during execution: ${errorMessage}`);
-    } finally {
-      setIsExecuting(false);
-    }
-  };
 
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans overflow-hidden">
@@ -210,10 +178,6 @@ export default function App() {
           <div className="flex items-center gap-2">
             <Bot className="w-6 h-6 text-emerald-500" />
             <h1 className="text-lg font-semibold tracking-tight">Principal ML Interviewer</h1>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1 bg-zinc-800 rounded-full border border-zinc-700">
-            <Award className="w-4 h-4 text-amber-500" />
-            <span className="text-xs font-medium text-zinc-400 uppercase tracking-widest">Interview Mode</span>
           </div>
         </header>
 
@@ -271,7 +235,7 @@ export default function App() {
                     : "bg-zinc-800/50 text-zinc-200 border border-zinc-700/50"
                 )}>
                   <div className="markdown-body prose prose-invert prose-sm max-w-none">
-                    <Markdown>{msg.content}</Markdown>
+                    <Markdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{msg.content}</Markdown>
                   </div>
                 </div>
               </motion.div>
@@ -328,14 +292,6 @@ export default function App() {
             >
               <Eraser className="w-4 h-4" />
             </button>
-            <button
-              onClick={handleRunCode}
-              disabled={isExecuting}
-              className="flex items-center gap-2 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-all shadow-lg shadow-emerald-900/20"
-            >
-              {isExecuting ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
-              RUN CODE
-            </button>
           </div>
         </header>
 
@@ -356,34 +312,6 @@ export default function App() {
             />
           </div>
           
-          <AnimatePresence>
-            {executionResult && (
-              <motion.div 
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="border-t border-zinc-800 bg-zinc-900/90 backdrop-blur-sm"
-              >
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2 text-zinc-400">
-                      <Terminal className="w-4 h-4" />
-                      <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Execution Output</span>
-                    </div>
-                    <button 
-                      onClick={() => setExecutionResult(null)}
-                      className="text-[10px] text-zinc-500 hover:text-zinc-300 uppercase tracking-widest"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                  <pre className="font-mono text-xs text-emerald-400 bg-black/40 p-4 rounded-xl border border-zinc-800/50 overflow-x-auto max-h-48 custom-scrollbar">
-                    {executionResult}
-                  </pre>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </div>
     </div>
