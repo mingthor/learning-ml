@@ -107,6 +107,9 @@ export default function App() {
             ]
           }
         ],
+        toolConfig: {
+          includeServerSideToolInvocations: true
+        } as any
       },
     });
   }, []);
@@ -160,9 +163,10 @@ export default function App() {
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
       console.error("Gemini Error:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       setMessages(prev => [...prev, { 
         role: 'bot', 
-        content: "Sorry, I encountered an error while processing your request." 
+        content: `Sorry, I encountered an error while processing your request: ${errorMessage}` 
       }]);
     } finally {
       setIsLoading(false);
@@ -191,7 +195,8 @@ export default function App() {
       }
     } catch (error) {
       console.error("Execution Error:", error);
-      setExecutionResult("Error during execution. Please check your code.");
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setExecutionResult(`Error during execution: ${errorMessage}`);
     } finally {
       setIsExecuting(false);
     }
