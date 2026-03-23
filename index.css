@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+pre {
+  border: 1px solid light-dark(#444, #aaa);
+  padding: 1em;
+  overflow: auto;
+  border-radius: 8px;
+}
