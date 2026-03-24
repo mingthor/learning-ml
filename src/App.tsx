@@ -12,6 +12,7 @@ import Markdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
+import questions from './questions.json';
 
 // Utility for tailwind classes
 function cn(...inputs: ClassValue[]) {
@@ -25,61 +26,56 @@ interface Message {
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-const SYSTEM_INSTRUCTION = `Persona:
-You are a Principal ML Engineer and Technical Interviewer at a top-tier AI lab. You are an expert in writing clean, performant, and numerically stable PyTorch/JAX code. You have a "zero-tolerance" policy for inefficient loops or poor memory management in ML training scripts.
+const SYSTEM_INSTRUCTION = (questionTitle: string) => `Persona:
+You are a Principal ML Engineer and Technical Interviewer at a top-tier AI lab (think Google Brain/DeepMind). You are an expert in writing clean, performant, and numerically stable PyTorch/JAX code. You have a "zero-tolerance" policy for inefficient loops or poor memory management in ML training scripts.
 
 Task:
-Your goal is to conduct a coding-heavy ML interview.
+Your goal is to conduct a coding-heavy ML interview. The current task is: ${questionTitle}.
 
-Scenario-Based Questions: Instead of asking "what is attention?", ask the candidate to implement it. (e.g., "Write a memory-efficient Multi-Head Attention block from scratch using PyTorch.")
+Interview Style & Context:
+- Academic Paper Style: Your responses should be structured like an academic paper. Use formal language, clear transitions, and multiple paragraphs to separate ideas.
+- Technical Depth: When introducing a task or terminology (e.g., Batch Normalization, Multi-Head Attention), provide a brief but deep technical background. Explain the "why" behind the math and how it's used in production at scale (e.g., training LLMs, high-throughput vision models, or real-time recommendation systems).
+- Interactive Dialogue: This is a conversation, not just a code submission. The candidate can ask clarifying questions, discuss trade-offs, or ask about industry best practices. Respond to these questions thoroughly, even if no code is provided.
+- Back-and-Forth: Encourage the candidate to explain their reasoning. If they ask "Why not use LayerNorm here?", provide a detailed architectural comparison.
+- Critique Protocol: For every code snippet, analyze correctness, efficiency, numerical stability, and readability.
 
-Technical Constraints: Include constraints like "avoid for loops," "ensure numerical stability for FP16," or "optimize for KV-caching."
-
-Iterative Review: Once the candidate provides code, you must perform a "Code Critique" before moving to the next question.
-
-The "Critique" Protocol:
-For every code snippet the candidate provides, analyze:
-1. Correctness: Does the math match the implementation? (e.g., Are the dimensions $B, L, D$ handled correctly?)
-2. Efficiency: Are they using vectorized operations? Is there unnecessary memory allocation?
-3. Numerical Stability: Did they handle log-sum-exp or epsilon for divisions?
-4. Readability: Is the code modular and idiomatic for the framework (PyTorch/JAX)?
-
-Scoring & Evaluation:
-After 3 coding tasks, provide a Seniority Assessment:
-- Junior: Code works but is inefficient/clunky.
-- Senior: Clean, vectorized code with basic stability.
-- Principal/Staff: Handles edge cases, memory optimization, and hardware-aware constraints (e.g., Triton kernels or Flash Attention concepts).
+Professional Formatting:
+- Use Markdown for structured responses. Use bold headers, bullet points, and clear sections.
+- Use LaTeX for ALL mathematical expressions: $O(N^2 d)$ for complexity or $\text{Softmax}(Q K^T / \sqrt{d_k})$.
+- Keep your tone professional, encouraging, yet rigorous.
+- Paragraphs: Use multiple paragraphs to improve readability. Each paragraph should focus on a single core concept or instruction.
 
 Response Protocol:
-- ONLY conversation goes to the chat (left pane).
-- ALL code must be displayed in the right implementation workspace. Use the 'set_editor_content' tool to update this workspace.
-- DO NOT include large code blocks in your chat response. Use the chat to explain, critique, and guide.
-- Use Markdown for text formatting in chat.
-- Use LaTeX for math: $O(N^2 d)$ for complexity or $\text{Softmax}(Q K^T / \sqrt{d_k})$.
+- NO CODE IN CHAT: You are strictly forbidden from including code blocks (e.g., \`\`\`python ... \`\`\`) in the chat conversation.
+- WORKSPACE ONLY: All code, boilerplates, and corrections MUST be sent via the 'set_editor_content' tool. The chat is for explanation, critique, and guidance ONLY.
+- If you need to refer to a specific line of code, describe it in text or use inline code snippets (e.g., \`x.mean()\`) but NEVER full blocks.
 
 Coding Interface Protocol:
-When presenting a coding task, use 'set_editor_content' to provide the structured Python code block.
-Boilerplate: Include all necessary imports (torch, nn, einops) and class/function signatures.
-Locked Areas: Wrap sections that the candidate should NOT change in comments like # --- FIXED STRUCTURE: DO NOT MODIFY ---.
-Editable Zones: Clearly mark the implementation areas with:
-# >>> START YOUR IMPLEMENTATION <<<
-pass # Your code here
-# >>> END YOUR IMPLEMENTATION <<<
+- Modular Code: ALWAYS provide code in a modular format (e.g., wrapped in a function like 'train_step' or a class method). Avoid flat scripts.
+- Implementation Markers: Place the markers INSIDE the function body.
+  Example:
+  def train_step(model, optimizer, x, y):
+      # >>> START YOUR IMPLEMENTATION <<<
+      # Your code here
+      # >>> END YOUR IMPLEMENTATION <<<
+- Boilerplate: Include all necessary imports (torch, nn, einops) and class/function signatures.
+- Locked Areas: Wrap sections that the candidate should NOT change in comments like # --- FIXED STRUCTURE: DO NOT MODIFY ---.
 
-Instructions: Explicitly tell the candidate to fill in the missing logic in the implementation workspace to the right.
+Instructions: Explicitly tell the candidate to fill in the missing logic in the workspace to the right.
 Never provide the solution immediately. Give hints if the candidate is stuck, then ask them to try again.
 
+Available Questions for reference:
+${JSON.stringify(questions.map(q => ({ title: q.title, description: q.description })), null, 2)}
+
 Context:
-The user has an implementation workspace to the right. When the user sends a message, the current code in their implementation workspace is provided to you as context. Use it to evaluate their progress.`;
+The user has a workspace to the right. When the user sends a message, the current code in their workspace is provided to you as context. Use it to evaluate their progress.`;
 
 export default function App() {
-  const [messages, setMessages] = useState<Message[]>([{
-    role: 'bot',
-    content: "Welcome to the ML coding interview. I've set up a Multi-Layer Perceptron (MLP) training template in the implementation workspace. Please implement the full training step (zero gradients, forward pass, loss computation, backward pass, and optimizer step).\n\nWould you like to pursue this MLP task, or would you prefer to switch to a different topic?"
-  }]);
+  const [selectedQuestion] = useState(() => questions[Math.floor(Math.random() * questions.length)]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [code, setCode] = useState<string>('import torch\nimport torch.nn as nn\nimport torch.optim as optim\n\n# Define a simple MLP\nclass MLP(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.layers = nn.Sequential(\n            nn.Linear(10, 32),\n            nn.ReLU(),\n            nn.Linear(32, 1)\n        )\n\n    def forward(self, x):\n        return self.layers(x)\n\nmodel = MLP()\noptimizer = optim.SGD(model.parameters(), lr=0.01)\ncriterion = nn.MSELoss()\n\n# Dummy data\nx = torch.randn(1, 10)\ntarget = torch.randn(1, 1)\n\n# >>> START YOUR IMPLEMENTATION <<<\n# Perform a full training step\n# 1. Zero the gradients\n# 2. Forward pass\n# 3. Compute loss\n# 4. Backward pass\n# 5. Optimizer step\npass\n# >>> END YOUR IMPLEMENTATION <<<');
+  const [code, setCode] = useState<string>(selectedQuestion.initial_code);
   const scrollRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<Chat | null>(null);
 
@@ -89,7 +85,7 @@ export default function App() {
     chatRef.current = ai.chats.create({
       model: 'gemini-3-flash-preview',
       config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
+        systemInstruction: SYSTEM_INSTRUCTION(selectedQuestion.title),
         tools: [
           {
             functionDeclarations: [
@@ -116,6 +112,33 @@ export default function App() {
         } as any
       },
     });
+
+    // Start the interview automatically
+    const startInterview = async () => {
+      setIsLoading(true);
+      try {
+        const response = await chatRef.current!.sendMessage({
+          message: `Introduce yourself (Jeff Dean persona) and the first coding task: ${selectedQuestion.title}. 
+          Provide technical background on the topic, its importance in ML (e.g. numerical stability, convergence), 
+          and its industry relevance. Then, ask the candidate to begin the implementation in the workspace.`,
+        });
+        
+        setMessages([{
+          role: 'bot',
+          content: response.text || "Welcome to the interview. Let's get started."
+        }]);
+      } catch (error) {
+        console.error("Initial Message Error:", error);
+        setMessages([{
+          role: 'bot',
+          content: "Welcome to the ML coding interview. I'm Jeff Dean. Let's start with the task in the workspace."
+        }]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    startInterview();
   }, []);
 
   // Auto-scroll to bottom of chat
@@ -177,7 +200,7 @@ export default function App() {
         <header className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900">
           <div className="flex items-center gap-2">
             <Bot className="w-6 h-6 text-emerald-500" />
-            <h1 className="text-lg font-semibold tracking-tight">Principal ML Interviewer</h1>
+            <h1 className="text-lg font-semibold tracking-tight">Jeff Dean</h1>
           </div>
         </header>
 
@@ -229,12 +252,12 @@ export default function App() {
                   {msg.role === 'user' ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
                 </div>
                 <div className={cn(
-                  "p-4 rounded-2xl text-sm leading-relaxed shadow-sm",
+                  "p-4 rounded-2xl text-base leading-relaxed shadow-sm",
                   msg.role === 'user' 
                     ? "bg-emerald-600/10 text-emerald-50 border border-emerald-600/20" 
                     : "bg-zinc-800/50 text-zinc-200 border border-zinc-700/50"
                 )}>
-                  <div className="markdown-body prose prose-invert prose-sm max-w-none">
+                  <div className="markdown-body prose prose-invert prose-base max-w-none">
                     <Markdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{msg.content}</Markdown>
                   </div>
                 </div>
@@ -261,7 +284,7 @@ export default function App() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Type your response or implementation..."
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl py-4 pl-4 pr-14 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all placeholder:text-zinc-600"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl py-4 pl-4 pr-14 text-base focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all placeholder:text-zinc-600"
             />
             <button
               onClick={handleSend}
@@ -282,7 +305,7 @@ export default function App() {
         <header className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
           <div className="flex items-center gap-2">
             <Code2 className="w-5 h-5 text-emerald-500" />
-            <span className="text-sm font-medium text-zinc-300 tracking-tight">Implementation Workspace</span>
+            <span className="text-sm font-medium text-zinc-300 tracking-tight">Workspace</span>
           </div>
           <div className="flex items-center gap-2">
             <button
