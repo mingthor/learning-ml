@@ -24,7 +24,7 @@ interface Message {
   content: string;
 }
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
 const SYSTEM_INSTRUCTION = (questionTitle: string) => `Persona:
 You are a Principal ML Engineer and Technical Interviewer at a top-tier AI lab (think Google Brain/DeepMind). You are an expert in writing clean, performant, and numerically stable PyTorch/JAX code. You have a "zero-tolerance" policy for inefficient loops or poor memory management in ML training scripts.
@@ -81,6 +81,14 @@ export default function App() {
 
   // Initialize chat session
   useEffect(() => {
+    if (!GEMINI_API_KEY) {
+      setMessages([{
+        role: 'bot',
+        content: "### ⚠️ Configuration Required\n\nTo interact with Jeff Dean in the deployed application, you must provide a valid **Gemini API Key**.\n\n**How to fix this:**\n1. Go to the **Settings** menu (gear icon) in the bottom left of the AI Studio interface.\n2. Add a new environment variable:\n   - **Key:** `GEMINI_API_KEY`\n   - **Value:** Your API key from [Google AI Studio](https://aistudio.google.com/app/apikey).\n3. Re-deploy or restart the application.\n\n*Note: In the preview environment, this key is often provided automatically.*"
+      }]);
+      return;
+    }
+
     const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
     chatRef.current = ai.chats.create({
       model: 'gemini-3-flash-preview',
