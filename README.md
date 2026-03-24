@@ -1,20 +1,85 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# ML Coding Interview with Jeff Dean
 
-# Run and deploy your AI Studio app
+This application is a specialized ML coding interview simulator. It features a persona of Jeff Dean (Principal ML Engineer) who conducts a rigorous, academic-style interview on various machine learning topics.
 
-This contains everything you need to run your app locally.
+## Features
+- **Jeff Dean Persona:** Academic, rigorous, and professional feedback.
+- **Interactive Workspace:** Real-time Python code editor with syntax highlighting.
+- **LaTeX Math Support:** Mathematical expressions rendered in chat.
+- **Dynamic Questions:** Randomly selected ML challenges (e.g., Multi-Head Attention, Batch Norm).
 
-View your app in AI Studio: https://ai.studio/apps/ef13062d-1880-43ce-b8c8-4ededcaf30ec
+---
 
-## Run Locally
+## Local Development & Testing
 
-**Prerequisites:**  Node.js
+To run this application on your local machine, follow these steps:
 
+### 1. Prerequisites
+- **Node.js:** Version 18 or higher.
+- **npm:** Typically bundled with Node.js.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### 2. Setup
+1.  **Clone the project:**
+    ```bash
+    git clone <your-repo-url>
+    cd <project-directory>
+    ```
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+3.  **Environment Variables:**
+    - Create a `.env` file in the root directory.
+    - Add your **Gemini API Key**:
+      ```env
+      GEMINI_API_KEY=your_api_key_here
+      ```
+    - *Note: You can get a free key from [Google AI Studio](https://aistudio.google.com/app/apikey).*
+
+### 3. Running the App
+- **Development Mode:**
+  ```bash
+  npm run dev
+  ```
+  The app will be available at `http://localhost:3000`.
+
+- **Linting:**
+  ```bash
+  npm run lint
+  ```
+
+---
+
+## Production Build & Deployment
+
+### 1. Build for Production
+To create an optimized production build:
+```bash
+npm run build
+```
+This will generate a `dist/` folder containing the static assets.
+
+### 2. Preview Production Build
+To test the production build locally:
+```bash
+npm run preview
+```
+
+### 3. Deployment Options
+- **AI Studio Build:** Click the **Deploy** button in the AI Studio interface. Ensure `GEMINI_API_KEY` is set in the **Settings** menu.
+- **Static Hosting:** Deploy the `dist/` folder to Vercel, Netlify, or GitHub Pages.
+- **Docker:** Use a standard Nginx or Node.js image to serve the `dist/` folder.
+
+---
+
+## Project Structure
+- `src/App.tsx`: Main application logic and UI.
+- `src/questions.json`: List of interview questions and initial code boilerplates.
+- `vite.config.ts`: Vite configuration for environment variables and build settings.
+- `index.css`: Global styles using Tailwind CSS.
+
+---
+
+## Troubleshooting
+- **"API key not valid":** Ensure your `GEMINI_API_KEY` is correctly set in the environment variables.
+- **Build Errors:** Ensure all dependencies are installed with `npm install`.
