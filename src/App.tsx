@@ -7,7 +7,7 @@ import { createChatSession, sendMessageToGemini } from './services/gemini';
 import { Message } from './types';
 
 export default function App() {
-  const [selectedQuestion] = useState(() => questions[Math.floor(Math.random() * questions.length)]);
+  const [selectedQuestion, setSelectedQuestion] = useState(() => questions[Math.floor(Math.random() * questions.length)]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -90,6 +90,23 @@ export default function App() {
     await processGeminiResponse(requestMessage);
   }, [isLoading, code]);
 
+  const handleSkipQuestion = useCallback(() => {
+    if (isLoading) return;
+    
+    let nextQuestion;
+    if (questions.length > 1) {
+      do {
+        nextQuestion = questions[Math.floor(Math.random() * questions.length)];
+      } while (nextQuestion.id === selectedQuestion.id);
+    } else {
+      nextQuestion = questions[0];
+    }
+    
+    setSelectedQuestion(nextQuestion);
+    setCode(nextQuestion.initial_code);
+    setMessages([]);
+  }, [selectedQuestion, isLoading]);
+
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans overflow-hidden">
       <ChatPane 
@@ -103,6 +120,7 @@ export default function App() {
         code={code}
         setCode={setCode}
         onRequestSolution={handleRequestSolution}
+        onSkipQuestion={handleSkipQuestion}
         isLoading={isLoading}
       />
     </div>

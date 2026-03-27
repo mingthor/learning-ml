@@ -3,16 +3,17 @@ import Editor from 'react-simple-code-editor';
 import { highlight, languages } from 'prismjs';
 import 'prismjs/components/prism-python';
 import 'prismjs/themes/prism-tomorrow.css';
-import { Code2, Eraser, Lightbulb } from 'lucide-react';
+import { Code2, Eraser, Lightbulb, Shuffle } from 'lucide-react';
 
 interface EditorPaneProps {
   code: string;
   setCode: (val: string) => void;
   onRequestSolution: () => void;
+  onSkipQuestion: () => void;
   isLoading: boolean;
 }
 
-export const EditorPane: React.FC<EditorPaneProps> = ({ code, setCode, onRequestSolution, isLoading }) => {
+export const EditorPane: React.FC<EditorPaneProps> = ({ code, setCode, onRequestSolution, onSkipQuestion, isLoading }) => {
   return (
     <div className="w-1/2 flex flex-col bg-zinc-950">
       <header className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
@@ -21,6 +22,15 @@ export const EditorPane: React.FC<EditorPaneProps> = ({ code, setCode, onRequest
           <span className="text-sm font-medium text-zinc-300 tracking-tight">Workspace</span>
         </div>
         <div className="flex items-center gap-4">
+          <button
+            onClick={onSkipQuestion}
+            disabled={isLoading}
+            className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-zinc-400 hover:text-zinc-200 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Skip Question"
+          >
+            <Shuffle className="w-3.5 h-3.5" />
+            Skip
+          </button>
           <button
             onClick={onRequestSolution}
             disabled={isLoading}
