@@ -9,4 +9,6 @@ export interface Question {
   description: string;
   initial_code: string;
   initial_message: string;
+  tag: "ml" | "algorithm" | "system";
+  follow_up: string[];
 }

@@ -3,7 +3,8 @@ import Editor from 'react-simple-code-editor';
 import { highlight, languages } from 'prismjs';
 import 'prismjs/components/prism-python';
 import 'prismjs/themes/prism-tomorrow.css';
-import { Code2, Eraser, Lightbulb, Shuffle } from 'lucide-react';
+import { Code2, Eraser, Lightbulb, Shuffle, Tag } from 'lucide-react';
+import { Question } from '../types';
 
 interface EditorPaneProps {
   code: string;
@@ -11,15 +12,42 @@ interface EditorPaneProps {
   onRequestSolution: () => void;
   onSkipQuestion: () => void;
   isLoading: boolean;
+  question: Question;
+  selectedTag: string;
+  setSelectedTag: (tag: string) => void;
 }
 
-export const EditorPane: React.FC<EditorPaneProps> = ({ code, setCode, onRequestSolution, onSkipQuestion, isLoading }) => {
+export const EditorPane: React.FC<EditorPaneProps> = ({ 
+  code, 
+  setCode, 
+  onRequestSolution, 
+  onSkipQuestion, 
+  isLoading, 
+  question,
+  selectedTag,
+  setSelectedTag
+}) => {
   return (
     <div className="w-1/2 flex flex-col bg-zinc-950">
       <header className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
-        <div className="flex items-center gap-2">
-          <Code2 className="w-5 h-5 text-emerald-500" />
-          <span className="text-sm font-medium text-zinc-300 tracking-tight">Workspace</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Code2 className="w-5 h-5 text-emerald-500" />
+            <span className="text-sm font-medium text-zinc-300 tracking-tight">Workspace</span>
+          </div>
+          <div className="flex items-center gap-2 border-l border-zinc-800 pl-3">
+            <Tag className="w-3.5 h-3.5 text-zinc-500" />
+            <select
+              value={selectedTag}
+              onChange={(e) => setSelectedTag(e.target.value)}
+              className="bg-transparent text-[11px] font-bold uppercase tracking-wider text-zinc-400 outline-none cursor-pointer hover:text-zinc-200 transition-colors"
+            >
+              <option value="all" className="bg-zinc-900">All Tags</option>
+              <option value="ml" className="bg-zinc-900">ML</option>
+              <option value="algorithm" className="bg-zinc-900">Algorithm</option>
+              <option value="system" className="bg-zinc-900">System</option>
+            </select>
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <button

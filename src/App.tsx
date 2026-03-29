@@ -7,6 +7,7 @@ import { createChatSession, sendMessageToGemini } from './services/gemini';
 import { Message } from './types';
 
 export default function App() {
+  const [selectedTag, setSelectedTag] = useState<string>('all');
   const [selectedQuestion, setSelectedQuestion] = useState(() => questions[Math.floor(Math.random() * questions.length)]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -24,7 +25,7 @@ export default function App() {
       return;
     }
 
-    chatRef.current = createChatSession(selectedQuestion.title);
+    chatRef.current = createChatSession(selectedQuestion.title, selectedQuestion.follow_up);
 
     // Start the interview automatically
     setMessages([{
@@ -93,19 +94,26 @@ export default function App() {
   const handleSkipQuestion = useCallback(() => {
     if (isLoading) return;
     
+    const filteredQuestions = selectedTag === 'all' 
+      ? questions 
+      : questions.filter(q => q.tag === selectedTag);
+
     let nextQuestion;
-    if (questions.length > 1) {
+    if (filteredQuestions.length > 1) {
       do {
-        nextQuestion = questions[Math.floor(Math.random() * questions.length)];
+        nextQuestion = filteredQuestions[Math.floor(Math.random() * filteredQuestions.length)];
       } while (nextQuestion.id === selectedQuestion.id);
+    } else if (filteredQuestions.length === 1) {
+      nextQuestion = filteredQuestions[0];
     } else {
-      nextQuestion = questions[0];
+      // Fallback if no questions match (shouldn't happen with current tags)
+      nextQuestion = questions[Math.floor(Math.random() * questions.length)];
     }
     
     setSelectedQuestion(nextQuestion);
     setCode(nextQuestion.initial_code);
     setMessages([]);
-  }, [selectedQuestion, isLoading]);
+  }, [selectedQuestion, isLoading, selectedTag]);
 
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans overflow-hidden">
@@ -122,6 +130,9 @@ export default function App() {
         onRequestSolution={handleRequestSolution}
         onSkipQuestion={handleSkipQuestion}
         isLoading={isLoading}
+        question={selectedQuestion}
+        selectedTag={selectedTag}
+        setSelectedTag={setSelectedTag}
       />
     </div>
   );

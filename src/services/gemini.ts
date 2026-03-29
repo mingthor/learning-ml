@@ -1,12 +1,12 @@
 import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { GEMINI_API_KEY, SYSTEM_INSTRUCTION } from "../constants";
 
-export const createChatSession = (questionTitle: string): Chat => {
+export const createChatSession = (questionTitle: string, followUp: string[]): Chat => {
   const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
   return ai.chats.create({
     model: 'gemini-3-flash-preview',
     config: {
-      systemInstruction: SYSTEM_INSTRUCTION(questionTitle),
+      systemInstruction: SYSTEM_INSTRUCTION(questionTitle, followUp),
       tools: [
         {
           functionDeclarations: [
