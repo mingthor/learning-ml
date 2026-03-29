@@ -52,7 +52,7 @@ export default function App() {
   const pickLeastShownQuestion = useCallback((tag: string, currentStats: Record<string, QuestionStats>, excludeId?: string) => {
     const filtered = tag === 'all' 
       ? questions 
-      : questions.filter(q => q.tag === tag);
+      : questions.filter(q => q.tag.includes(tag));
     
     if (filtered.length === 0) return questions[0];
 
