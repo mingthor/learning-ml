@@ -3,13 +3,13 @@ import Editor from 'react-simple-code-editor';
 import { highlight, languages } from 'prismjs';
 import 'prismjs/components/prism-python';
 import 'prismjs/themes/prism-tomorrow.css';
-import { Code2, Eraser, Lightbulb, Shuffle, Tag } from 'lucide-react';
+import { CheckCircle2, Code2, Eraser, Shuffle, Tag } from 'lucide-react';
 import { Question } from '../types';
 
 interface EditorPaneProps {
   code: string;
   setCode: (val: string) => void;
-  onRequestSolution: () => void;
+  onSubmitForReview: () => void;
   onSkipQuestion: () => void;
   isLoading: boolean;
   question: Question;
@@ -20,7 +20,7 @@ interface EditorPaneProps {
 export const EditorPane: React.FC<EditorPaneProps> = ({ 
   code, 
   setCode, 
-  onRequestSolution, 
+  onSubmitForReview, 
   onSkipQuestion, 
   isLoading, 
   question,
@@ -45,6 +45,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
               >
                 <option value="all" className="bg-zinc-900">All Tags</option>
                 <option value="ml" className="bg-zinc-900">ML</option>
+                <option value="MoE" className="bg-zinc-900">MoE</option>
                 <option value="algorithm" className="bg-zinc-900">Algorithm</option>
                 <option value="system" className="bg-zinc-900">System</option>
               </select>
@@ -65,13 +66,13 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
             Skip
           </button>
           <button
-            onClick={onRequestSolution}
+            onClick={onSubmitForReview}
             disabled={isLoading}
             className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Request Solution"
+            title="Submit for Review"
           >
-            <Lightbulb className="w-3.5 h-3.5" />
-            Show Solution
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Submit for Review
           </button>
           <button
             onClick={() => setCode('')}

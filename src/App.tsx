@@ -3,11 +3,12 @@ import { Chat } from "@google/genai";
 import { ChatPane } from './components/ChatPane';
 import { EditorPane } from './components/EditorPane';
 import { questions, GEMINI_API_KEY } from './constants';
-import { createChatSession, sendMessageToGemini } from './services/gemini';
+import { createChatSession, sendMessageToGemini, generateQuestionBackground } from './services/gemini';
 import { Message, Question } from './types';
 import { auth, signIn, signOut } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { fetchAllStats, incrementViewCount, incrementSkipCount, updateMasteryScore, QuestionStats, testConnection } from './services/statsService';
+import { fetchQuestionBackground, saveQuestionBackground } from './services/backgroundService';
 import { LogIn, LogOut, Loader2, BarChart3 } from 'lucide-react';
 import { StatsModal } from './components/StatsModal';
 
@@ -87,19 +88,46 @@ export default function App() {
     }
   }, [user, stats, selectedQuestion, pickLeastShownQuestion]);
 
-  // Initialize chat session
+  // Initialize chat session and background info
   useEffect(() => {
-    if (!selectedQuestion) return;
+    if (!selectedQuestion || !user) return;
 
-    chatRef.current = createChatSession(selectedQuestion.title, selectedQuestion.follow_up);
+    const initializeSession = async () => {
+      setIsLoading(true);
+      
+      try {
+        // Initialize chat session
+        chatRef.current = createChatSession(selectedQuestion.title, selectedQuestion.follow_up);
 
-    const formattedInitialMessage = `${selectedQuestion.initial_message}\n\nPlease implement the missing logic in the workspace to the right.`;
-    
-    setMessages([{
-      role: 'bot',
-      content: formattedInitialMessage
-    }]);
-  }, [selectedQuestion]);
+        // Fetch or generate background info
+        let background = await fetchQuestionBackground(selectedQuestion.id);
+        
+        if (!background) {
+          background = await generateQuestionBackground(selectedQuestion.title, selectedQuestion.description);
+          if (background) {
+            await saveQuestionBackground(selectedQuestion.id, background);
+          }
+        }
+
+        const formattedInitialMessage = `${selectedQuestion.initial_message}\n\n${background ? `### Architecture Overview & Background\n\n${background}\n\n` : ''}Please implement the missing logic in the workspace to the right.`;
+        
+        setMessages([{
+          role: 'bot',
+          content: formattedInitialMessage
+        }]);
+      } catch (error) {
+        console.error("Error initializing session:", error);
+        setMessages([{
+          role: 'bot',
+          content: `${selectedQuestion.initial_message}\n\nPlease implement the missing logic in the workspace to the right.`
+        }]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeSession();
+  }, [selectedQuestion, user]);
 
   const processGeminiResponse = async (prompt: string) => {
     if (isLoading || !chatRef.current) return;
@@ -154,14 +182,14 @@ export default function App() {
     await processGeminiResponse(currentInput);
   }, [input, isLoading, code]);
 
-  const handleRequestSolution = useCallback(async () => {
+  const handleSubmitForReview = useCallback(async () => {
     if (isLoading || !chatRef.current) return;
 
-    const requestMessage = "I'm stuck. Please show me the best solution for this task.";
-    const userMessage: Message = { role: 'user', content: requestMessage };
+    const reviewRequest = "I've finished my implementation. Jeff, please review my code, provide feedback, and show me the optimal solution if needed. Also, feel free to ask follow-up questions.";
+    const userMessage: Message = { role: 'user', content: "Submit for Review" };
     setMessages(prev => [...prev, userMessage]);
     
-    await processGeminiResponse(requestMessage);
+    await processGeminiResponse(reviewRequest);
   }, [isLoading, code]);
 
   const handleSkipQuestion = useCallback(async (tagOverride?: string) => {
@@ -251,7 +279,7 @@ export default function App() {
       <EditorPane 
         code={code}
         setCode={setCode}
-        onRequestSolution={handleRequestSolution}
+        onSubmitForReview={handleSubmitForReview}
         onSkipQuestion={() => handleSkipQuestion()}
         isLoading={isLoading}
         question={selectedQuestion}

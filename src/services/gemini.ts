@@ -55,3 +55,16 @@ export const sendMessageToGemini = async (chat: Chat, input: string, code: strin
     message: promptWithContext,
   });
 };
+
+export const generateQuestionBackground = async (questionTitle: string, questionDescription: string): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: `You are Jeff Dean. Provide a deep technical background and architecture overview for the following ML interview task: "${questionTitle}". 
+    Description: ${questionDescription}
+    
+    Your response should be in an academic paper style, formal, and thorough. Explain the "why" behind the math and how it's used in production at scale.
+    Use Markdown and LaTeX for mathematical expressions.`,
+  });
+  return response.text || '';
+};
