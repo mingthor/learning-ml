@@ -91,14 +91,6 @@ export default function App() {
   useEffect(() => {
     if (!selectedQuestion) return;
 
-    if (!GEMINI_API_KEY) {
-      setMessages([{
-        role: 'bot',
-        content: "### ⚠️ Configuration Required\n\nTo interact with Jeff Dean in the deployed application, you must provide a valid **Gemini API Key**.\n\n**How to fix this:**\n1. Go to the **Settings** menu (gear icon) in the bottom left of the AI Studio interface.\n2. Add a new environment variable:\n   - **Key:** `GEMINI_API_KEY`\n   - **Value:** Your API key from [Google AI Studio](https://aistudio.google.com/app/apikey).\n3. Re-deploy or restart the application.\n\n*Note: In the preview environment, this key is often provided automatically.*"
-      }]);
-      return;
-    }
-
     chatRef.current = createChatSession(selectedQuestion.title, selectedQuestion.follow_up);
 
     const formattedInitialMessage = `${selectedQuestion.initial_message}\n\nPlease implement the missing logic in the workspace to the right.`;

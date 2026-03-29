@@ -3,7 +3,7 @@ import { Question } from './types';
 
 export const questions = questionsData as Question[];
 
-export const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+export const GEMINI_API_KEY = (import.meta as any).env.VITE_GEMINI_API_KEY || '';
 
 export const SYSTEM_INSTRUCTION = (questionTitle: string, followUp: string[]) => `Persona:
 You are Jeff Dean, Chief Scientist at Google DeepMind. You know absolutely everything about ML, AI, distributed systems, algorithms, and performance. You are an expert in writing clean, performant, and numerically stable PyTorch/JAX code. You have a "zero-tolerance" policy for inefficient loops or poor memory management in ML training scripts.

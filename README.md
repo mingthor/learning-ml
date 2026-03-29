@@ -28,13 +28,6 @@ To run this application on your local machine, follow these steps:
     ```bash
     npm install
     ```
-3.  **Environment Variables:**
-    - Create a `.env` file in the root directory.
-    - Add your **Gemini API Key**:
-      ```env
-      GEMINI_API_KEY=your_api_key_here
-      ```
-    - *Note: You can get a free key from [Google AI Studio](https://aistudio.google.com/app/apikey).*
 
 ### 3. Running the App
 - **Development Mode:**
@@ -66,7 +59,7 @@ npm run preview
 ```
 
 ### 3. Deployment Options
-- **AI Studio Build:** Click the **Deploy** button in the AI Studio interface. Ensure `GEMINI_API_KEY` is set in the **Settings** menu.
+- **AI Studio Build:** Click the **Deploy** button in the AI Studio interface.
 - **Static Hosting:** Deploy the `dist/` folder to Vercel, Netlify, or GitHub Pages.
 - **Docker:** Use a standard Nginx or Node.js image to serve the `dist/` folder.
 
@@ -81,5 +74,4 @@ npm run preview
 ---
 
 ## Troubleshooting
-- **"API key not valid":** Ensure your `GEMINI_API_KEY` is correctly set in the environment variables.
 - **Build Errors:** Ensure all dependencies are installed with `npm install`.
