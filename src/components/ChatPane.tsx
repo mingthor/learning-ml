@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Bot, Sparkles, Loader2, Send } from 'lucide-react';
+import { Bot, Sparkles, Loader2, Send, LogOut, BarChart3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageItem } from './MessageItem';
 import { Message } from '../types';
@@ -10,6 +10,9 @@ interface ChatPaneProps {
   setInput: (val: string) => void;
   handleSend: () => void;
   isLoading: boolean;
+  onSignOut: () => void;
+  statsActive: boolean;
+  onOpenStats: () => void;
 }
 
 export const ChatPane: React.FC<ChatPaneProps> = ({ 
@@ -17,7 +20,10 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
   input, 
   setInput, 
   handleSend, 
-  isLoading 
+  isLoading,
+  onSignOut,
+  statsActive,
+  onOpenStats
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -30,9 +36,49 @@ export const ChatPane: React.FC<ChatPaneProps> = ({
   return (
     <div className="w-1/2 flex flex-col border-r border-zinc-800 bg-zinc-900/50">
       <header className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900">
-        <div className="flex items-center gap-2">
-          <Bot className="w-6 h-6 text-emerald-500" />
-          <h1 className="text-lg font-semibold tracking-tight">Jeff Dean</h1>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+              <Bot className="w-6 h-6 text-emerald-500" />
+            </div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-zinc-900 rounded-full" />
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-base font-bold tracking-tight text-zinc-100">Jeff Dean</h1>
+              <div className="flex items-center justify-center w-3.5 h-3.5 bg-blue-500 rounded-full">
+                <svg viewBox="0 0 24 24" className="w-2 h-2 text-white fill-current">
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                </svg>
+              </div>
+            </div>
+            <p className="text-[10px] font-medium text-emerald-500 uppercase tracking-widest">Chief Scientist • Online</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {statsActive && (
+            <button 
+              onClick={onOpenStats}
+              className="hidden lg:flex items-center gap-2 text-[10px] text-zinc-500 bg-zinc-800/50 px-3 py-1.5 rounded-full border border-zinc-700/50 hover:bg-zinc-800 hover:text-zinc-300 transition-all"
+              title="View Detailed Statistics"
+            >
+              <BarChart3 className="w-3 h-3" />
+              <span className="font-bold uppercase tracking-wider">Stats Active</span>
+            </button>
+          )}
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-zinc-800/50 border border-zinc-700/50 rounded-full">
+            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Interview Active</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={onSignOut}
+              className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-500 hover:text-zinc-100"
+              title="Sign Out"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </header>
 

@@ -34,6 +34,16 @@ export const MessageItem: React.FC<MessageItemProps> = ({ msg, index }) => {
           ? "bg-emerald-600/10 text-emerald-50 border border-emerald-600/20" 
           : "bg-zinc-800/50 text-zinc-200 border border-zinc-700/50"
       )}>
+        {msg.role === 'bot' && (
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+              Jeff Dean
+            </span>
+            <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">
+              Chief Scientist
+            </span>
+          </div>
+        )}
         <div className="markdown-body prose prose-invert prose-base max-w-none">
           <Markdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{msg.content}</Markdown>
         </div>

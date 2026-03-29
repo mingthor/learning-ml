@@ -23,6 +23,20 @@ export const createChatSession = (questionTitle: string, followUp: string[]): Ch
                 },
                 required: ["code"]
               }
+            },
+            {
+              name: "set_mastery_score",
+              description: "Sets the user's mastery score for the current question. Call this whenever you observe the user demonstrating a certain level of skill or knowledge. The score should be between 0 and 10.",
+              parameters: {
+                type: Type.OBJECT,
+                properties: {
+                  score: {
+                    type: Type.NUMBER,
+                    description: "The mastery score (0-10)."
+                  }
+                },
+                required: ["score"]
+              }
             }
           ]
         }
