@@ -2,57 +2,59 @@
   "entities": {
     "QuestionStats": {
       "title": "Question Statistics",
-      "description": "Tracks how many times a question has been shown and skipped.",
+      "description": "Statistics for a specific interview question",
       "type": "object",
       "properties": {
         "viewCount": {
           "type": "integer",
-          "description": "Number of times the question was shown to the user."
+          "description": "Number of times the question was viewed"
         },
         "skipCount": {
           "type": "integer",
-          "description": "Number of times the question was skipped by the user."
+          "description": "Number of times the question was skipped"
         },
         "mastery": {
-          "type": "integer",
-          "description": "Mastery score from 0 to 10, judged by Jeff Dean.",
-          "minimum": 0,
-          "maximum": 10
+          "type": "number",
+          "description": "Mastery score for the question (0-10)"
         },
         "updatedAt": {
           "type": "string",
           "format": "date-time",
-          "description": "Last time these stats were updated."
+          "description": "Last time the stats were updated"
+        },
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who owns these stats"
         }
       },
-      "required": ["viewCount", "skipCount", "updatedAt"]
+      "required": ["viewCount", "skipCount", "mastery", "updatedAt", "userId"]
     },
     "QuestionBackground": {
-      "title": "Question Background Information",
-      "description": "Architecture overview and background information for a specific question.",
+      "title": "Question Background",
+      "description": "Deep technical background and architecture overview for a question",
       "type": "object",
       "properties": {
-        "background": {
+        "content": {
           "type": "string",
-          "description": "Detailed background information and architecture overview."
+          "description": "The generated background content in Markdown"
         },
         "updatedAt": {
           "type": "string",
           "format": "date-time",
-          "description": "Last time this background was updated."
+          "description": "Last time the background was updated"
         }
       },
-      "required": ["background", "updatedAt"]
+      "required": ["content", "updatedAt"]
     }
   },
   "firestore": {
-    "/question_stats/{questionId}": {
+    "/stats/{statsId}": {
       "schema": "QuestionStats",
-      "description": "Statistics for a specific question."
+      "description": "Collection of question statistics indexed by questionId_userId"
     },
-    "/question_backgrounds/{questionId}": {
+    "/backgrounds/{questionId}": {
       "schema": "QuestionBackground",
-      "description": "Background information for a specific question."
+      "description": "Collection of generated backgrounds for each question"
     }
   }
 }
